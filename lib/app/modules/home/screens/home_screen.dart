@@ -1,12 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_mobx/flutter_mobx.dart';
 import 'package:flutter_modular/flutter_modular.dart';
-
-import 'package:prova_flutter/app/modules/home/home_store.dart';
-
 import '../../../commons/vibrate/vibrate.dart';
 import '../../../commons/widgets/custom_container.dart';
 import '../../../commons/widgets/custom_politica_privacidade.dart';
+import '../home_store.dart';
 import '../widgets/custom_editable_text_field.dart';
 import '../widgets/custom_text_field_home.dart';
 
@@ -16,6 +14,7 @@ class HomeScreen extends StatefulWidget {
   @override
   State<HomeScreen> createState() => _HomeScreenState();
 }
+
 class _HomeScreenState extends State<HomeScreen> {
   final _newTextController = TextEditingController();
   final store = Modular.get<HomeStore>();
@@ -26,14 +25,12 @@ class _HomeScreenState extends State<HomeScreen> {
     super.initState();
     store.loadTexts();
     _customTextFieldHomeFocus.requestFocus();
-
-
   }
+
   @override
   void dispose() {
-    // TODO: implement dispose
-    super.dispose();
     _newTextController.dispose();
+    super.dispose();
   }
 
   @override
@@ -44,7 +41,6 @@ class _HomeScreenState extends State<HomeScreen> {
           builder: (context) {
             switch (store.operationState) {
               case TextOperationState.loading:
-
                 return _buildLoading();
               case TextOperationState.success:
                 return _buildContent();
@@ -60,13 +56,10 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Widget _buildLoading() {
-
     return Center(child: CircularProgressIndicator());
-
   }
 
   Widget _buildContent() {
-    _customTextFieldHomeFocus.requestFocus();
     final vibrate = Vibrate();
     return Padding(
       padding: const EdgeInsets.only(left: 30, right: 30),
@@ -126,8 +119,7 @@ class _HomeScreenState extends State<HomeScreen> {
                           SizedBox(width: 8),
                           InkWell(
                             onTap: () {
-                              store.deleteText(text);
-
+                              _showDeleteConfirmationDialog(context, text);
                             },
                             child: Container(
                               width: 30,
@@ -146,23 +138,20 @@ class _HomeScreenState extends State<HomeScreen> {
                 );
               },
             ),
-
           ),
           SizedBox(height: 10),
           CustomTextFieldHome(
             controller: _newTextController,
             focusNode: _customTextFieldHomeFocus,
-            onEditingComplete: () async{
+            onEditingComplete: () async {
               final trimmedText = _newTextController.text.trim();
               if (trimmedText.isNotEmpty) {
                 store.addText(trimmedText);
                 _newTextController.clear();
                 _customTextFieldHomeFocus.requestFocus();
-              }else{
+              } else {
                 await vibrate.vibrate();
-
               }
-            //  _customTextFieldHomeFocus.requestFocus();
             },
           ),
           Spacer(),
@@ -186,6 +175,39 @@ class _HomeScreenState extends State<HomeScreen> {
           ),
         ],
       ),
+    );
+  }
+
+  Future<void> _showDeleteConfirmationDialog(BuildContext context, String text) async {
+    return showDialog<void>(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: Text('Confirmação'),
+          content: SingleChildScrollView(
+            child: ListBody(
+              children: <Widget>[
+                Text('Deseja realmente excluir o item?'),
+              ],
+            ),
+          ),
+          actions: <Widget>[
+            TextButton(
+              onPressed: () {
+                Navigator.of(context).pop();
+              },
+              child: Text('Cancelar',style: TextStyle(color: Colors.green),),
+            ),
+            TextButton(
+              onPressed: () {
+                store.deleteText(text);
+                Navigator.of(context).pop();
+              },
+              child: Text('Confirmar',style: TextStyle(color: Colors.red),),
+            ),
+          ],
+        );
+      },
     );
   }
 }
